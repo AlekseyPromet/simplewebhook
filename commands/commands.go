@@ -4,6 +4,7 @@ import (
 	"AlekseyPromet/examples/simplewebhook/app"
 	"AlekseyPromet/examples/simplewebhook/models"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -38,6 +39,7 @@ var (
 
 			fx.New(
 				fx.Provide(service),
+				fx.Invoke(func(*http.Server) {}),
 			).Run()
 
 			return nil

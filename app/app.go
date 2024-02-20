@@ -4,9 +4,11 @@ import (
 	"AlekseyPromet/examples/simplewebhook/models"
 	"AlekseyPromet/examples/simplewebhook/store"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -42,11 +44,59 @@ func NewService(cfg models.Config) (*Service, error) {
 	return &Service{
 		port:   cfg.Port,
 		logger: logger,
+		store:  store.NewTestStore(),
 	}, fmt.Errorf("Service creation failed")
 }
 
+func (s *Service) GetServeMux() *http.ServeMux {
+
+	mux := http.NewServeMux()
+
+	middleware := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+	}
+
+	middlewareError := func(w http.ResponseWriter, r *http.Request, err error) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+
+	mux.HandleFunc("POST /invoke", func(w http.ResponseWriter, r *http.Request) {
+		middleware(w, r)
+
+		source := models.Source{}
+
+		if err := json.NewDecoder(r.Body).Decode(&source); err != nil {
+			middlewareError(w, r, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+		defer cancel()
+
+		key, err := s.store.Create(ctx, source)
+		if err != nil {
+			middlewareError(w, r, err)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(key); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+	})
+
+	return mux
+}
+
 func (s *Service) Run(lc fx.Lifecycle) *http.Server {
-	srv := &http.Server{Addr: "localhost:" + s.port}
+
+	srv := &http.Server{
+		Addr:    "localhost:" + s.port,
+		Handler: s.GetServeMux(),
+	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

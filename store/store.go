@@ -7,6 +7,6 @@ import (
 
 type Store interface {
 	Create(ctx context.Context, src models.Source) (models.ApiKey, error)
-	Update(ctx context.Context, key models.ApiKey, src models.Source) error
-	Get(ctx context.Context, key models.ApiKey) (models.Source, error)
+	Increment(ctx context.Context, key models.ApiKey, valueInc uint64) error
+	Get(ctx context.Context, key models.ApiKey) (models.SourceStore, error)
 }

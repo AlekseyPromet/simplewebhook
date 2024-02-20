@@ -3,11 +3,15 @@ module AlekseyPromet/examples/simplewebhook
 go 1.22.0
 
 require (
+	github.com/go-resty/resty/v2 v2.11.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.26.0
+	golang.org/x/sync v0.5.0
 )
+
+require golang.org/x/net v0.19.0 // indirect
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

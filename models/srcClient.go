@@ -1,29 +1,26 @@
 package models
 
-import (
-	"net/url"
-)
-
 type Source struct {
-	Url      string `json:"url"`
+	Url      string `json:"url,required"`
 	Requests struct {
-		Amount     uint64 `json:"amount"`
-		PerSeconds uint64 `json:"per_second"`
+		Amount     uint64 `json:"amount,required"`
+		PerSeconds int64  `json:"per_seconds,required"`
 	}
 }
 
-type ResponceWebhool struct {
+type ResponseWebhook struct {
 	Iteration uint64 `json:"iteration"`
 }
 
 type Requests struct {
 	Iteration  uint64 `json:"iteration"`
 	Amount     uint64 `json:"amount"`
-	PerSeconds uint64 `json:"per_second"`
+	PerSeconds int64  `json:"per_seconds"`
 }
 
 type SourceStore struct {
-	Url url.URL `json:"url"`
+	Key string
+	Url string
 	Requests
 }
 

@@ -21,11 +21,6 @@ var (
 		Long:  "Complete documentation is available at https://github.com/AlekseyPromet/simplewebhook/blob/main/README.md",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			err := cmd.ParseFlags(args)
-			if err != nil {
-				return err
-			}
-
 			config := models.Config{
 				Port:    viper.GetString("port"),
 				Verbose: viper.GetBool("verbose"),
@@ -38,7 +33,7 @@ var (
 			}
 
 			fx.New(
-				fx.Provide(service),
+				fx.Provide(service.Run),
 				fx.Invoke(func(*http.Server) {}),
 			).Run()
 
@@ -52,7 +47,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
 	rootCmd.PersistentFlags().StringP("port", "p", "8088", "servise start on port")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", true, "verbose output")
-	rootCmd.PersistentFlags().BoolP("debug", "d", false, "verbose and debug output")
+	rootCmd.PersistentFlags().BoolP("debug", "d", true, "verbose and debug output")
 	viper.RegisterAlias("f", "config")
 	viper.BindPFlag("port", rootCmd.PersistentFlags().Lookup("port"))
 	viper.SetDefault("author", "Aleksey Promet <promet.alex@gmail.com>")
@@ -65,11 +60,11 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+		// home, err := os.UserHomeDir()
+		// cobra.CheckErr(err)
 
 		// Search config in home directory with name "sw-api.yaml"
-		viper.AddConfigPath(home)
+		viper.AddConfigPath(".")
 		viper.SetConfigType("yaml")
 		viper.SetConfigName("sw-api.yaml")
 	}

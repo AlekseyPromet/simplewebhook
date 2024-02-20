@@ -4,51 +4,49 @@ import (
 	"AlekseyPromet/examples/simplewebhook/models"
 	"context"
 	"errors"
-	"fmt"
-	"net/url"
 	"sync"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type TestStore struct {
-	smap *sync.Map
+	smap   *sync.Map
+	logger zap.Logger
 }
 
-func NewTestStore() *TestStore {
-	return &TestStore{smap: new(sync.Map)}
+func NewTestStore(logger zap.Logger) *TestStore {
+	return &TestStore{
+		smap:   new(sync.Map),
+		logger: logger,
+	}
 }
 
-func (s *TestStore) Create(ctx context.Context, src models.Source) (models.ApiKey, error) {
+func (s *TestStore) Create(ctx context.Context, src models.Source) (models.SourceStore, error) {
 
 	key := uuid.New().String()
 
-	path, err := url.Parse(src.Url)
-	if err != nil {
-		return models.ApiKey{}, fmt.Errorf("parse url address %w", err)
-	}
-
-	s.smap.Store(key, models.SourceStore{
-		Url: *path,
+	result := models.SourceStore{
+		Key: key,
+		Url: src.Url,
 		Requests: models.Requests{
 			Amount:     src.Requests.Amount,
 			PerSeconds: src.Requests.PerSeconds,
 		},
-	})
+	}
+	s.smap.Store(key, result)
 
-	return models.ApiKey{
-		Key: key,
-	}, nil
+	return result, nil
 }
 
-func (s *TestStore) Increment(ctx context.Context, key models.ApiKey, valueInc uint64) error {
+func (s *TestStore) Increment(ctx context.Context, key string, valueInc uint64) error {
 
-	keyUuid, err := uuid.Parse(key.Key)
+	_, err := uuid.Parse(key)
 	if err != nil {
 		return err
 	}
 
-	value, ok := s.smap.Load(keyUuid.String())
+	value, ok := s.smap.Load(key)
 	if !ok {
 		return errors.New("key not found")
 	}
@@ -58,21 +56,64 @@ func (s *TestStore) Increment(ctx context.Context, key models.ApiKey, valueInc u
 		return errors.New("key not found")
 	}
 
-	m.Requests.Iteration = valueInc
+	m.Requests.Iteration += valueInc
 
-	s.smap.Store(keyUuid.String(), m)
+	s.smap.Store(key, m)
 
 	return nil
 }
 
-func (s *TestStore) Get(ctx context.Context, key models.ApiKey) (m models.SourceStore, err error) {
+func (s *TestStore) Get(ctx context.Context, key string) (m models.SourceStore, err error) {
 
-	keyUuid, err := uuid.Parse(key.Key)
+	_, err = uuid.Parse(key)
 	if err != nil {
 		return m, err
 	}
 
-	value, ok := s.smap.Load(keyUuid.String())
+	value, ok := s.smap.Load(key)
+	if !ok {
+		return m, errors.New("key not found")
+	}
+
+	m, ok = value.(models.SourceStore)
+	if !ok {
+		return m, errors.New("model is not parced")
+	}
+
+	return m, nil
+}
+
+func (s *TestStore) GetAll(ctx context.Context) chan *models.SourceStore {
+
+	out := make(chan *models.SourceStore, 1)
+
+	go func() {
+		defer close(out)
+
+		s.smap.Range(func(key, value any) bool {
+
+			m, ok := value.(models.SourceStore)
+			if !ok {
+				s.logger.Error("model is not parced")
+				return false
+			}
+
+			out <- &m
+
+			return true
+		})
+	}()
+
+	return out
+}
+
+func (s *TestStore) Delete(ctx context.Context, key string) (m models.SourceStore, err error) {
+	_, err = uuid.Parse(key)
+	if err != nil {
+		return m, err
+	}
+
+	value, ok := s.smap.LoadAndDelete(key)
 	if !ok {
 		return m, errors.New("key not found")
 	}

@@ -44,8 +44,8 @@ func NewService(cfg models.Config) (*Service, error) {
 	return &Service{
 		port:   cfg.Port,
 		logger: logger,
-		store:  store.NewTestStore(),
-	}, fmt.Errorf("Service creation failed")
+		store:  store.NewTestStore(*logger),
+	}, nil
 }
 
 func (s *Service) GetServeMux() *http.ServeMux {
@@ -85,7 +85,57 @@ func (s *Service) GetServeMux() *http.ServeMux {
 			return
 		}
 
-		w.WriteHeader(http.StatusCreated)
+	})
+
+	mux.HandleFunc("POST /get", func(w http.ResponseWriter, r *http.Request) {
+		middleware(w, r)
+
+		source := models.ApiKey{}
+
+		if err := json.NewDecoder(r.Body).Decode(&source); err != nil {
+			middlewareError(w, r, err)
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+		defer cancel()
+
+		response, err := s.store.Get(ctx, source.Key)
+		if err != nil {
+			middlewareError(w, r, err)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	})
+
+	mux.HandleFunc("POST /delete", func(w http.ResponseWriter, r *http.Request) {
+		middleware(w, r)
+
+		source := models.ApiKey{}
+
+		if err := json.NewDecoder(r.Body).Decode(&source); err != nil {
+			middlewareError(w, r, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+		defer cancel()
+
+		response, err := s.store.Delete(ctx, source.Key)
+		if err != nil {
+			middlewareError(w, r, err)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 	})
 
 	return mux
@@ -107,6 +157,15 @@ func (s *Service) Run(lc fx.Lifecycle) *http.Server {
 			s.logger.Sugar().Infoln("Starting HTTP server at", srv.Addr)
 
 			go srv.Serve(ln)
+
+			errChan := make(chan error)
+			go func() {
+				for e := range errChan {
+					s.logger.Sugar().Error(e)
+				}
+			}()
+			go s.WebhookCicle(context.Background(), errChan)
+
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {

@@ -29,7 +29,7 @@ requests:
     $ go run main.go
 
 - запрос на создание webhook для localhost:8090
-    curl --location 'localhost:8088/invoke' \
+    $ curl --location 'localhost:8088/invoke' \
     --header 'Content-Type: application/json' \
     --data '{
     "url": "http://localhost:8090",
@@ -40,7 +40,7 @@ requests:
     }'
 
 - запрос на получение правила по ключу
-    curl --location 'localhost:8088/get' \
+    $ curl --location 'localhost:8088/get' \
     --header 'Content-Type: application/json' \
     --data '{
         "key": "d32b1d54-3b09-40e9-b14e-66174d7ad5c2"

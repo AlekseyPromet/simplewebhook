@@ -34,7 +34,8 @@ func (s *Service) postWebhook(eg *errgroup.Group, source *models.SourceStore, er
 		client := resty.New()
 		freqency := time.Duration(1000/source.PerSeconds) * time.Millisecond
 		endTime := time.Now().Add(IterationDuration)
-		body := &models.ResponseWebhook{Iteration: source.Amount}
+		body := &models.ResponseWebhook{}
+		body.Iteration = source.Amount
 
 		for i := time.Now(); i.Before(endTime); i = time.Now() {
 

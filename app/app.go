@@ -164,7 +164,7 @@ func (s *Service) Run(lc fx.Lifecycle) *http.Server {
 					s.logger.Sugar().Error(e)
 				}
 			}()
-			go s.WebhookCicle(context.Background(), errChan)
+			go s.WebhookCycle(context.Background(), errChan)
 
 			return nil
 		},

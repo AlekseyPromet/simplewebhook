@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  wedhook-client:
+    container_name: wh-client
+    ports:
+      - 8090:8090
+  
+  webhook-sever:
+    container_name: wh-cli
+    depends_on:
+      - webhook-client
+    ports:
+      - 8089:8089

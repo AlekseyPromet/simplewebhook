@@ -4,7 +4,7 @@ import (
 	"AlekseyPromet/examples/simplewebhook/models"
 	"context"
 	"time"
-
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
 )
@@ -49,10 +49,10 @@ func (s *Service) postWebhook(eg *errgroup.Group, source *models.SourceStore) {
 				return err
 			}
 			if resp != nil && resp.IsError() {
-				return err
+				return fmt.Errorf("status code %v\n", resp.Status())
 			}
 			if resp != nil {
-				s.logger.Sugar().Debugf("post %v status %v", source.Url, resp.Status())
+				s.logger.Sugar().Debugf("post %v status %v\n", source.Url, resp.Status())
 			}
 			time.Sleep(freqency)
 		}

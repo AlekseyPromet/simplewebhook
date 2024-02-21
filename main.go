@@ -10,8 +10,10 @@ var (
 )
 
 func main() {
-	println("xBuildVersion", xBuildVersion)
-	println("xBuildHashCommit", xBuildHashCommit)
+	if xBuildVersion != "" {
+		println("xBuildVersion", xBuildVersion)
+		println("xBuildHashCommit", xBuildHashCommit)
+	}
 
 	commands.Execute()
 }

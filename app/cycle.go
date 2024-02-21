@@ -11,25 +11,24 @@ import (
 
 const IterationDuration = time.Second
 
-func (s *Service) WebhookCycle(ctx context.Context, errChan chan error) {
+func (s *Service) WebhookCycle(ctx context.Context) {
 	s.logger.Sugar().Infof("star webhook cycle at %v", time.Now().Format(time.RFC3339))
 
 	for {
 		eg, ctx := errgroup.WithContext(ctx)
 
 		for source := range s.store.GetAll(ctx) {
-			s.postWebhook(eg, source, errChan)
+			s.postWebhook(eg, source)
 		}
 
 		if err := eg.Wait(); err != nil {
-			s.logger.Sugar().Errorln(err)
-			errChan <- err
+			s.logger.Sugar().Errorf("error posting webhook: %v", err)
 		}
 	}
 }
 
-func (s *Service) postWebhook(eg *errgroup.Group, source *models.SourceStore, errChan chan error) {
-	eg.Go(func() error {
+func (s *Service) postWebhook(eg *errgroup.Group, source *models.SourceStore) {
+	eg.TryGo(func() error {
 
 		client := resty.New()
 		freqency := time.Duration(1000/source.PerSeconds) * time.Millisecond
@@ -47,12 +46,10 @@ func (s *Service) postWebhook(eg *errgroup.Group, source *models.SourceStore, er
 				SetBody(body).
 				Post(source.Url)
 			if err != nil {
-				errChan <- err
-				break
+				return err
 			}
 			if resp != nil && resp.IsError() {
-				errChan <- err
-				break
+				return err
 			}
 			if resp != nil {
 				s.logger.Sugar().Debugf("post %v status %v", source.Url, resp.Status())

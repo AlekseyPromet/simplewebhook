@@ -42,10 +42,15 @@ func NewService(cfg models.Config) (*Service, error) {
 	}
 
 	return &Service{
-		port:   cfg.Port,
-		logger: logger,
-		store:  store.NewTestStore(*logger),
-	}, nil
+			port:   cfg.Port,
+			logger: logger.Named("WHOOK"),
+			store:  store.NewTestStore(*logger),
+		},
+		nil
+}
+
+func (s *Service) GetLogger() *zap.Logger {
+	return s.logger
 }
 
 func (s *Service) GetServeMux() *http.ServeMux {
@@ -173,5 +178,6 @@ func (s *Service) Run(lc fx.Lifecycle) *http.Server {
 			return srv.Shutdown(ctx)
 		},
 	})
+
 	return srv
 }

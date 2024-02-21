@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
 )
 
 var (
@@ -35,6 +37,9 @@ var (
 			fx.New(
 				fx.Provide(service.Run),
 				fx.Invoke(func(*http.Server) {}),
+				fx.WithLogger(func(logger *zap.Logger) fxevent.Logger {
+					return &fxevent.ZapLogger{Logger: service.GetLogger()}
+				}),
 			).Run()
 
 			return nil

@@ -10,8 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
-	"go.uber.org/fx/fxevent"
-	"go.uber.org/zap"
 )
 
 var (
@@ -23,7 +21,7 @@ var (
 		Long:  "Complete documentation is available at https://github.com/AlekseyPromet/simplewebhook/blob/main/README.md",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			config := models.Config{
+			config := &models.Config{
 				Port:    viper.GetString("port"),
 				Verbose: viper.GetBool("verbose"),
 				Debug:   viper.GetBool("debug"),
@@ -37,9 +35,7 @@ var (
 			fx.New(
 				fx.Provide(service.Run),
 				fx.Invoke(func(*http.Server) {}),
-				fx.WithLogger(func(logger *zap.Logger) fxevent.Logger {
-					return &fxevent.ZapLogger{Logger: service.GetLogger()}
-				}),
+				// fx.WithLogger(service.GetFxLogger),
 			).Run()
 
 			return nil

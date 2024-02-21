@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -21,7 +22,7 @@ type Service struct {
 	store  store.Store
 }
 
-func NewService(cfg models.Config) (*Service, error) {
+func NewService(cfg *models.Config) (*Service, error) {
 	var (
 		err    error
 		logger *zap.Logger
@@ -49,8 +50,8 @@ func NewService(cfg models.Config) (*Service, error) {
 		nil
 }
 
-func (s *Service) GetLogger() *zap.Logger {
-	return s.logger
+func (s *Service) GetFxLogger() fxevent.Logger {
+	return &fxevent.ZapLogger{Logger: s.logger}
 }
 
 func (s *Service) GetServeMux() *http.ServeMux {
@@ -163,13 +164,7 @@ func (s *Service) Run(lc fx.Lifecycle) *http.Server {
 
 			go srv.Serve(ln)
 
-			errChan := make(chan error)
-			go func() {
-				for e := range errChan {
-					s.logger.Sugar().Error(e)
-				}
-			}()
-			go s.WebhookCycle(context.Background(), errChan)
+			go s.WebhookCycle(context.Background())
 
 			return nil
 		},

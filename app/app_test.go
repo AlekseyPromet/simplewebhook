@@ -13,7 +13,7 @@ import (
 type serviceInterface interface {
 	GetServeMux() *http.ServeMux
 	Run(fx.Lifecycle) *http.Server
-	WebhookCycle(context.Context, chan error)
+	WebhookCycle(context.Context)
 }
 
 func TestService_GetServeMux(t *testing.T) {

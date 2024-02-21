@@ -11,8 +11,8 @@ import (
 
 const IterationDuration = time.Second
 
-func (s *Service) WebhookCicle(ctx context.Context, errChan chan error) {
-	s.logger.Sugar().Infof("star webhook cicle at %v", time.Now().Format(time.RFC3339))
+func (s *Service) WebhookCycle(ctx context.Context, errChan chan error) {
+	s.logger.Sugar().Infof("star webhook cycle at %v", time.Now().Format(time.RFC3339))
 
 	for {
 		eg, ctx := errgroup.WithContext(ctx)

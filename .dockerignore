@@ -1,0 +1,21 @@
+# IDEs stuff
+.idea
+.vscode
+.DS_Store
+
+# Builds and generated code
+build/*.Dockerfile
+
+# Deployments
+deploy
+
+# CI/CD
+.gitlab-ci.yml
+
+# Other
+README.md
+TODOs.md
+.gitignore
+
+# Logs
+logs/*

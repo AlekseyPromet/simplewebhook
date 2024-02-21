@@ -5,11 +5,7 @@ ARG ALPINE_VER
 RUN apk add tzdata
 RUN apk add --no-cache ca-certificates git
 
-WORKDIR /simplewebhook
-COPY ./cmd ./cmd
-COPY ./internal ./internal
-COPY ./go.mod ./go.mod
-COPY ./go.sum ./go.sum
+COPY . .
 
 # install updates and build executable
 RUN apk update -X http://dl-3.alpinelinux.org/alpine/v3.19/main && \
@@ -33,4 +29,4 @@ COPY --from=builder --chown=app:app /src/app .
 # run container as new non-root user
 USER app
 
-CMD ["/app/app"]
+CMD ["/app"]
